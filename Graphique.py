@@ -1,5 +1,9 @@
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit,
-                             QPushButton, QMessageBox)
+                             QPushButton, QMessageBox, QTextEdit)
+from PyQt6.QtCore import pyqtSignal, QObject
+from Client import ChatClient
+import socket
+import threading
 import mysql.connector
 from mysql.connector import Error
 import bcrypt
@@ -61,11 +65,33 @@ def check_user(login, password):
                 connection.close()
 
 class ChatWindow(QWidget):
-    def __init__(self):
+    def __init__(self, nickname):
         super().__init__()
         self.setWindowTitle('Chat')
-        # Ajouter des éléments à la fenêtre de chat ici
-        # ...
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+
+        self.chat_history = QTextEdit()
+        self.chat_history.setReadOnly(True)
+        layout.addWidget(self.chat_history)
+
+        self.message_input = QLineEdit()
+        layout.addWidget(self.message_input)
+
+        send_button = QPushButton('Envoyer')
+        send_button.clicked.connect(self.send_message)
+        layout.addWidget(send_button)
+
+        self.client = ChatClient('localhost', 12350, self.display_message, nickname)
+
+    def display_message(self, message):
+        self.chat_history.append(message)
+
+    def send_message(self):
+        message = self.message_input.text()
+        self.client.send(message)
+        self.message_input.clear()
+
 class RegisterWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -135,7 +161,7 @@ class LoginWindow(QWidget):
         username = self.username_input.text()
         password = self.password_input.text()
         if check_user(username, password):
-            self.chat_window = ChatWindow()
+            self.chat_window = ChatWindow(username)  # Passez le nom d'utilisateur comme nickname
             self.chat_window.show()
         else:
             QMessageBox.warning(self, 'Erreur', 'Login et/ou mot de passe inconnu.')

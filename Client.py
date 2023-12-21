@@ -1,31 +1,37 @@
 import socket
 import threading
 
-nickname = input("Choose your nickname: ")
+class ChatClient:
+    def __init__(self, host, port, receive_callback, nickname):
+        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client.connect((host, port))
+        self.receive_callback = receive_callback
+        self.nickname = nickname
 
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect(('localhost', 12345))
+        # Envoyer le nickname au démarrage
+        self.client.send(nickname.encode('utf-8'))
 
-def receive():
-    while True:
+        # Démarrer le thread pour écouter les messages entrants
+        thread = threading.Thread(target=self.receive)
+        thread.daemon = True
+        thread.start()
+
+    def receive(self):
+        while True:
+            try:
+                message = self.client.recv(1024).decode('utf-8')
+                if message == 'NICK':
+                    self.client.send(self.nickname.encode('utf-8'))
+                else:
+                    self.receive_callback(message)
+            except Exception as e:
+                print("An error occurred:", e)
+                self.client.close()
+                break
+
+    def send(self, message):
         try:
-            message = client.recv(1024).decode('utf-8')
-            if message == 'NICK':
-                client.send(nickname.encode('utf-8'))
-            else:
-                print(message)
-        except:
-            print("An error occurred!")
-            client.close()
-            break
-
-def write():
-    while True:
-        message = f'{nickname}: {input("")}'
-        client.send(message.encode('utf-8'))
-
-receive_thread = threading.Thread(target=receive)
-receive_thread.start()
-
-write_thread = threading.Thread(target=write)
-write_thread.start()
+            self.client.send(message.encode('utf-8'))
+        except Exception as e:
+            print("An error occurred:", e)
+            self.client.close()
