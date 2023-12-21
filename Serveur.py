@@ -2,7 +2,7 @@ import socket
 import threading
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind(('localhost', 12350))
+server.bind(('localhost', 12354))
 server.listen()
 
 clients = []
@@ -10,16 +10,17 @@ nicknames = []
 
 def broadcast(message, sender):
     for client in clients:
-        if client != sender:  # Envoyer le message à tous les clients sauf à l'expéditeur
-            client.send(message)
+        client.send(message)
 
 def handle_client(client):
     while True:
         try:
             message = client.recv(1024)
             if message:
-                print(f"{nicknames[clients.index(client)]}: {message.decode('utf-8')}")
-                broadcast(message, client)  # Diffuser le message reçu
+                nickname_index = clients.index(client)
+                full_message = f"{nicknames[nickname_index]}: {message.decode('utf-8')}"
+                print(full_message)
+                broadcast(full_message.encode('utf-8'), client)  # Diffuser le message complet
         except:
             index = clients.index(client)
             clients.remove(client)

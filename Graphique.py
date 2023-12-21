@@ -82,7 +82,7 @@ class ChatWindow(QWidget):
         send_button.clicked.connect(self.send_message)
         layout.addWidget(send_button)
 
-        self.client = ChatClient('localhost', 12350, self.display_message, nickname)
+        self.client = ChatClient('localhost', 12354, self.display_message, nickname)
 
     def display_message(self, message):
         self.chat_history.append(message)
