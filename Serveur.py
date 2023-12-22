@@ -2,7 +2,7 @@ import socket
 import threading
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind(('localhost', 12354))
+server.bind(('localhost', 12355))
 server.listen()
 
 clients = []
@@ -35,13 +35,14 @@ def receive():
         client, address = server.accept()
         print(f"Connected with {str(address)}")
 
-        client.send('NICK'.encode('utf-8'))
+        client.send('NICK?'.encode('utf-8'))
         nickname = client.recv(1024).decode('utf-8')
+
         nicknames.append(nickname)
         clients.append(client)
 
         print(f"Nickname of the client is {nickname}")
-        broadcast(f"{nickname} joined the chat!".encode('utf-8'), client)  # Avertir les autres clients
+        broadcast(f"{nickname} joined the chat!".encode('utf-8'), client)
         thread = threading.Thread(target=handle_client, args=(client,))
         thread.start()
 
