@@ -64,8 +64,28 @@ def check_user(login, password):
                 cursor.close()
                 connection.close()
 
+
+class ChannelSelectionWindow(QWidget):
+    def __init__(self, username):
+        super().__init__()
+        self.setWindowTitle('Sélectionnez un Canal')
+        self.username = username
+        layout = QVBoxLayout()
+
+        # Bouton pour le canal "Général"
+        general_button = QPushButton('Général')
+        general_button.clicked.connect(self.join_general_channel)
+        layout.addWidget(general_button)
+
+        self.setLayout(layout)
+
+    def join_general_channel(self):
+        self.chat_window = ChatWindow(self.username, 'Général')
+        self.chat_window.show()
+        self.close()
+
 class ChatWindow(QWidget):
-    def __init__(self, nickname):
+    def __init__(self, nickname, channel):
         super().__init__()
         self.setWindowTitle('Chat')
         layout = QVBoxLayout()
@@ -83,14 +103,18 @@ class ChatWindow(QWidget):
         layout.addWidget(send_button)
 
         self.client = ChatClient('localhost', 12355, self.display_message, nickname)
+        self.channel = channel  # Ajoutez cette ligne pour stocker le canal actuel
 
     def display_message(self, message):
         self.chat_history.append(message)
 
     def send_message(self):
         message = self.message_input.text()
-        self.client.send(message)
-        self.message_input.clear()
+        if message:  # Assurez-vous que le message n'est pas vide
+            # Ajoutez le nom du canal au message
+            full_message = f"[{self.channel}] {message}"
+            self.client.send(full_message)
+            self.message_input.clear()
 
 class RegisterWindow(QWidget):
     def __init__(self):
@@ -161,8 +185,8 @@ class LoginWindow(QWidget):
         username = self.username_input.text()
         password = self.password_input.text()
         if check_user(username, password):
-            self.chat_window = ChatWindow(username)  # Passez le nom d'utilisateur comme nickname
-            self.chat_window.show()
+            self.channel_window = ChannelSelectionWindow(username)
+            self.channel_window.show()
         else:
             QMessageBox.warning(self, 'Erreur', 'Login et/ou mot de passe inconnu.')
 
