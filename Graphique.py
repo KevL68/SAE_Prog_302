@@ -74,13 +74,18 @@ class ChannelSelectionWindow(QWidget):
 
         # Bouton pour le canal "Général"
         general_button = QPushButton('Général')
-        general_button.clicked.connect(self.join_general_channel)
+        general_button.clicked.connect(lambda: self.join_channel('Général'))
         layout.addWidget(general_button)
+
+        # Bouton pour le canal "Blabla"
+        blabla_button = QPushButton('Blabla')
+        blabla_button.clicked.connect(lambda: self.join_channel('Blabla'))
+        layout.addWidget(blabla_button)
 
         self.setLayout(layout)
 
-    def join_general_channel(self):
-        self.chat_window = ChatWindow(self.username, 'Général')
+    def join_channel(self, channel):
+        self.chat_window = ChatWindow(self.username, channel)
         self.chat_window.show()
         self.close()
 
