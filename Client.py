@@ -27,9 +27,10 @@ class ChatClient:
                 self.client.close()
                 break
 
-    def send(self, message):
+    def send(self, message, channel):
+        full_message = f"[{channel}] {message}"
         try:
-            self.client.send(message.encode('utf-8'))
+            self.client.send(full_message.encode('utf-8'))
         except Exception as e:
             print("An error occurred:", e)
             self.client.close()

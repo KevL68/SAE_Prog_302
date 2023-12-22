@@ -71,6 +71,7 @@ class ChannelSelectionWindow(QWidget):
         self.setWindowTitle('Sélectionnez un Canal')
         self.username = username
         layout = QVBoxLayout()
+        self.resize(500, 500)
 
         # Bouton pour le canal "Général"
         general_button = QPushButton('Général')
@@ -80,6 +81,21 @@ class ChannelSelectionWindow(QWidget):
         # Bouton pour le canal "Blabla"
         blabla_button = QPushButton('Blabla')
         blabla_button.clicked.connect(lambda: self.join_channel('Blabla'))
+        layout.addWidget(blabla_button)
+
+        # Bouton pour le canal "Comptabilité"
+        blabla_button = QPushButton('Comptabilité')
+        blabla_button.clicked.connect(lambda: self.join_channel('Comptabilité'))
+        layout.addWidget(blabla_button)
+
+        # Bouton pour le canal "Informatique"
+        blabla_button = QPushButton('Informatique')
+        blabla_button.clicked.connect(lambda: self.join_channel('Informatique'))
+        layout.addWidget(blabla_button)
+
+        # Bouton pour le canal "Marketing"
+        blabla_button = QPushButton('Marketing')
+        blabla_button.clicked.connect(lambda: self.join_channel('Marketing'))
         layout.addWidget(blabla_button)
 
         self.setLayout(layout)
@@ -92,9 +108,10 @@ class ChannelSelectionWindow(QWidget):
 class ChatWindow(QWidget):
     def __init__(self, nickname, channel):
         super().__init__()
-        self.setWindowTitle('Chat')
+        self.setWindowTitle(f'Chat - {channel}')
         layout = QVBoxLayout()
         self.setLayout(layout)
+        self.resize(500,500)
 
         self.chat_history = QTextEdit()
         self.chat_history.setReadOnly(True)
@@ -115,10 +132,8 @@ class ChatWindow(QWidget):
 
     def send_message(self):
         message = self.message_input.text()
-        if message:  # Assurez-vous que le message n'est pas vide
-            # Ajoutez le nom du canal au message
-            full_message = f"[{self.channel}] {message}"
-            self.client.send(full_message)
+        if message:
+            self.client.send(message, self.channel)  # Inclure le nom du canal
             self.message_input.clear()
 
 class RegisterWindow(QWidget):
@@ -126,6 +141,7 @@ class RegisterWindow(QWidget):
         super().__init__()
         self.setWindowTitle('Inscription')
         layout = QVBoxLayout()
+        self.resize(500, 500)
 
         self.new_username_input = QLineEdit()
         self.new_username_input.setPlaceholderText("Login")
@@ -158,6 +174,7 @@ class LoginWindow(QWidget):
         super().__init__()
         self.setWindowTitle('Connexion au Chat')
         layout = QVBoxLayout()
+        self.resize(500, 500)
 
         self.username_input = QLineEdit()
         self.username_input.setPlaceholderText("login")
