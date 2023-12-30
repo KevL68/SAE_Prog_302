@@ -1,6 +1,8 @@
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit,
                              QPushButton, QMessageBox, QTextEdit)
 from PyQt6.QtCore import pyqtSignal, QObject
+from PyQt6.QtGui import QPalette, QColor
+from PyQt6.QtCore import Qt
 from Client import ChatClient
 import socket
 import threading
@@ -64,6 +66,36 @@ def check_user(login, password):
                 cursor.close()
                 connection.close()
 
+def appliquer_feuille_de_style(app):
+    app.setStyleSheet("""
+        QWidget {
+            background-color: #ecf0f1;
+        }
+        QTextEdit, QLineEdit {
+            background-color: #fff;
+            border: 1px solid #bdc3c7;
+            border-radius: 10px;
+            padding: 5px;
+            color: #34495e;
+            font-size: 16px;
+        }
+        QPushButton {
+            background-color: #3498db;
+            color: white;
+            border-radius: 10px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 16px;
+        }
+        QPushButton:hover {
+            background-color: #2980b9;
+        }
+        QLabel {
+            color: #e74c3c;
+            font-size: 16px;
+        }
+    """)
+
 
 class ChannelSelectionWindow(QWidget):
     def __init__(self, username):
@@ -71,7 +103,7 @@ class ChannelSelectionWindow(QWidget):
         self.setWindowTitle('Sélectionnez un Canal')
         self.username = username
         layout = QVBoxLayout()
-        self.resize(500, 500)
+        self.resize(250, 250)
 
         # Bouton pour le canal "Général"
         general_button = QPushButton('Général')
@@ -141,7 +173,7 @@ class RegisterWindow(QWidget):
         super().__init__()
         self.setWindowTitle('Inscription')
         layout = QVBoxLayout()
-        self.resize(500, 500)
+        self.resize(200, 200)
 
         self.new_username_input = QLineEdit()
         self.new_username_input.setPlaceholderText("Login")
@@ -174,7 +206,7 @@ class LoginWindow(QWidget):
         super().__init__()
         self.setWindowTitle('Connexion au Chat')
         layout = QVBoxLayout()
-        self.resize(500, 500)
+        self.resize(200, 200)
 
         self.username_input = QLineEdit()
         self.username_input.setPlaceholderText("login")
@@ -219,6 +251,7 @@ class LoginWindow(QWidget):
 
 if __name__ == '__main__':
     app = QApplication([])
+    appliquer_feuille_de_style(app)  # Appliquer la feuille de style globale à l'application
     login_window = LoginWindow()
     login_window.show()
     app.exec()
