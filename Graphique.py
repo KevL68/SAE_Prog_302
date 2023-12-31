@@ -175,7 +175,6 @@ class ChatWindow(QWidget):
             self.message_input.clear()
 
     def change_channel(self, new_channel):
-        # Mettre à jour le canal actuel et le titre de la fenêtre
         self.channel = new_channel
         self.setWindowTitle(f'Chat - {new_channel}')
 

@@ -7,10 +7,9 @@ import mysql.connector
 global server
 
 RESTRICTED_CHANNELS = ['Informatique', 'Marketing', 'Comptabilité']
-access_approved = {channel: [] for channel in RESTRICTED_CHANNELS}  # Liste des clients autorisés par canal
+access_approved = {channel: [] for channel in RESTRICTED_CHANNELS}
 
 def create_database_connection():
-    """Crée une connexion à la base de données."""
     try:
         connection = mysql.connector.connect(
             host='localhost',
@@ -24,7 +23,6 @@ def create_database_connection():
         return None
 
 def check_access(nickname, channel):
-    """Vérifie dans la base de données si l'utilisateur a accès au canal."""
     connection = create_database_connection()
     if connection is not None:
         try:
@@ -41,7 +39,6 @@ def check_access(nickname, channel):
     return None
 
 def add_access(nickname, channel):
-    """Ajoute l'accès de l'utilisateur au canal dans la base de données."""
     connection = create_database_connection()
     if connection is not None:
         try:
@@ -75,7 +72,7 @@ class ServerWindow(QWidget):
     def stop_server(self):
         global server_running
         server_running = False
-        server.close()  # Ferme le socket du serveur
+        server.close()
         QApplication.instance().quit()
 
 def start_server():
@@ -107,26 +104,21 @@ def start_server():
 
                         if channel in RESTRICTED_CHANNELS:
                             if client not in access_approved[channel]:
-                                # Vérifie si l'accès a déjà été accordé
                                 access = check_access(nickname, channel)
                                 if access is None:
-                                    # Demander l'autorisation si l'accès n'est pas dans la base de données
                                     print(f"Autorisez vous l'accès de {nickname} au canal {channel} ?")
                                     auth = input("Autoriser l'accès ? (oui/non): ").strip().lower()
                                     if auth == "oui":
-                                        # Accès approuvé : enregistrer dans la base de données et en mémoire
                                         add_access(nickname, channel)
                                         access_approved[channel].append(client)
-                                        client.send(f"ACCESS_GRANTED:{channel}".encode('utf-8'))
+                                        client.send(f"Accès autorisé par l'administrateur:{channel}".encode('utf-8'))
                                     else:
-                                        client.send(f"ACCESS_DENIED:{channel}".encode('utf-8'))
+                                        client.send(f"Accès refusé par l'administrateur:{channel}".encode('utf-8'))
                                     continue
                                 elif access:
-                                    # Accès déjà approuvé : ajouter à la liste en mémoire
                                     access_approved[channel].append(client)
                                 else:
-                                    # Accès non approuvé
-                                    client.send(f"ACCESS_DENIED:{channel}".encode('utf-8'))
+                                    client.send(f"Accès refusé par l'administrateur:{channel}".encode('utf-8'))
                                     continue
                             actual_message = actual_message.strip()
                     else:
@@ -148,27 +140,27 @@ def start_server():
             clients.remove(client)
             client.close()
             nicknames.remove(nickname)
-            print(f"{nickname} disconnected")
+            print(f"{nickname} déconnecté")
             client_channels.pop(client, None)
 
     def receive():
         while True:
             client, address = server.accept()
-            print(f"Connected with {str(address)}")
+            print(f"Connecté avec {str(address)}")
 
             client.send('NICK?'.encode('utf-8'))
             nickname = client.recv(1024).decode('utf-8')
             nicknames.append(nickname)
             clients.append(client)
-            client_channels[client] = None  # Pas de canal assigné initialement
+            client_channels[client] = None
 
-            print(f"Nickname of the client is {nickname}")
+            print(f"Le pseudo du client est {nickname}")
             thread = threading.Thread(target=handle_client, args=(client,))
             thread.start()
 
 
 
-    print("Server is listening...")
+    print("Server en cours d'éxécution..")
     receive()
 
     while server_running:
