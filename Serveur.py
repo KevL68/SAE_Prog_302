@@ -2,11 +2,58 @@ import sys
 import socket
 import threading
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushButton
+import mysql.connector
 
 global server
 
 RESTRICTED_CHANNELS = ['Informatique', 'Marketing', 'Comptabilité']
 access_approved = {channel: [] for channel in RESTRICTED_CHANNELS}  # Liste des clients autorisés par canal
+
+def create_database_connection():
+    """Crée une connexion à la base de données."""
+    try:
+        connection = mysql.connector.connect(
+            host='localhost',
+            user='user_sae',
+            password='Sae1*',
+            database='sae302'
+        )
+        return connection
+    except mysql.connector.Error as e:
+        print(f"Erreur lors de la connexion à MySQL: {e}")
+        return None
+
+def check_access(nickname, channel):
+    """Vérifie dans la base de données si l'utilisateur a accès au canal."""
+    connection = create_database_connection()
+    if connection is not None:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("SELECT access_granted FROM channel_access WHERE nickname = %s AND channel = %s", (nickname, channel))
+            record = cursor.fetchone()
+            return record[0] if record else None
+        except mysql.connector.Error as e:
+            print(f"Erreur lors de la vérification de l'accès: {e}")
+        finally:
+            if connection.is_connected():
+                cursor.close()
+                connection.close()
+    return None
+
+def add_access(nickname, channel):
+    """Ajoute l'accès de l'utilisateur au canal dans la base de données."""
+    connection = create_database_connection()
+    if connection is not None:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("INSERT INTO channel_access (nickname, channel, access_granted) VALUES (%s, %s, TRUE)", (nickname, channel))
+            connection.commit()
+        except mysql.connector.Error as e:
+            print(f"Erreur lors de l'ajout de l'accès: {e}")
+        finally:
+            if connection.is_connected():
+                cursor.close()
+                connection.close()
 
 class ServerWindow(QWidget):
     def __init__(self):
@@ -56,24 +103,38 @@ def start_server():
                         channel, actual_message = message.split(']', 1)
                         channel = channel[1:]
                         client_channels[client] = channel
+                        nickname = nicknames[clients.index(client)]
 
                         if channel in RESTRICTED_CHANNELS:
                             if client not in access_approved[channel]:
-                                print(f"Autorisez vous l'accès de {nicknames[clients.index(client)]} au canal {channel} ?")
-                                auth = input("Autoriser l'accès ? (oui/non): ").strip().lower()
-                                if auth == "oui":
+                                # Vérifie si l'accès a déjà été accordé
+                                access = check_access(nickname, channel)
+                                if access is None:
+                                    # Demander l'autorisation si l'accès n'est pas dans la base de données
+                                    print(f"Autorisez vous l'accès de {nickname} au canal {channel} ?")
+                                    auth = input("Autoriser l'accès ? (oui/non): ").strip().lower()
+                                    if auth == "oui":
+                                        # Accès approuvé : enregistrer dans la base de données et en mémoire
+                                        add_access(nickname, channel)
+                                        access_approved[channel].append(client)
+                                        client.send(f"ACCESS_GRANTED:{channel}".encode('utf-8'))
+                                    else:
+                                        client.send(f"ACCESS_DENIED:{channel}".encode('utf-8'))
+                                    continue
+                                elif access:
+                                    # Accès déjà approuvé : ajouter à la liste en mémoire
                                     access_approved[channel].append(client)
-                                    client.send(f"ACCESS_GRANTED:{channel}".encode('utf-8'))
                                 else:
+                                    # Accès non approuvé
                                     client.send(f"ACCESS_DENIED:{channel}".encode('utf-8'))
-                                continue  # Ne pas diffuser le message si l'accès n'est pas encore autorisé
-                        actual_message = actual_message.strip()
+                                    continue
+                            actual_message = actual_message.strip()
                     else:
                         channel = client_channels.get(client)
                         actual_message = message.strip()
 
                     if channel and (channel not in RESTRICTED_CHANNELS or client in access_approved[channel]):
-                        full_message = f"{nicknames[clients.index(client)]}: {actual_message}"
+                        full_message = f"{nickname}: {actual_message}"
                         print(full_message)
                         broadcast(full_message.encode('utf-8'), channel)
             except:
