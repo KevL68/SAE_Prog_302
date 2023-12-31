@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit,
-                             QPushButton, QMessageBox, QTextEdit)
+                             QPushButton, QMessageBox, QTextEdit, QComboBox)
 from PyQt6.QtCore import pyqtSignal, QObject
 from PyQt6.QtGui import QPalette, QColor
 from PyQt6.QtCore import Qt
@@ -146,6 +146,13 @@ class ChatWindow(QWidget):
         self.message_input = QLineEdit()
         layout.addWidget(self.message_input)
 
+        # Création du menu déroulant pour changer de canal
+        self.channel_selector = QComboBox()
+        self.channel_selector.addItems(['Général', 'Blabla', 'Comptabilité', 'Informatique', 'Marketing'])
+        self.channel_selector.setCurrentText(channel)
+        self.channel_selector.currentTextChanged.connect(self.change_channel)
+        layout.addWidget(self.channel_selector)
+
         send_button = QPushButton('Envoyer')
         send_button.clicked.connect(self.send_message)
         layout.addWidget(send_button)
@@ -166,6 +173,11 @@ class ChatWindow(QWidget):
         if message:
             self.client.send(message, self.channel)
             self.message_input.clear()
+
+    def change_channel(self, new_channel):
+        # Mettre à jour le canal actuel et le titre de la fenêtre
+        self.channel = new_channel
+        self.setWindowTitle(f'Chat - {new_channel}')
 
 class RegisterWindow(QWidget):
     def __init__(self):
