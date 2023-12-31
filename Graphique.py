@@ -30,7 +30,6 @@ def create_database_connection():
 
 def create_user(login, password):
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-    # Il est important de décoder le mot de passe haché avant de l'insérer dans la base de données
     decoded_hashed_password = hashed_password.decode('utf-8')
     connection = create_database_connection()
     if connection is not None:
@@ -105,27 +104,22 @@ class ChannelSelectionWindow(QWidget):
         layout = QVBoxLayout()
         self.resize(250, 250)
 
-        # Bouton pour le canal "Général"
         general_button = QPushButton('Général')
         general_button.clicked.connect(lambda: self.join_channel('Général'))
         layout.addWidget(general_button)
 
-        # Bouton pour le canal "Blabla"
         blabla_button = QPushButton('Blabla')
         blabla_button.clicked.connect(lambda: self.join_channel('Blabla'))
         layout.addWidget(blabla_button)
 
-        # Bouton pour le canal "Comptabilité"
         blabla_button = QPushButton('Comptabilité')
         blabla_button.clicked.connect(lambda: self.join_channel('Comptabilité'))
         layout.addWidget(blabla_button)
 
-        # Bouton pour le canal "Informatique"
         blabla_button = QPushButton('Informatique')
         blabla_button.clicked.connect(lambda: self.join_channel('Informatique'))
         layout.addWidget(blabla_button)
 
-        # Bouton pour le canal "Marketing"
         blabla_button = QPushButton('Marketing')
         blabla_button.clicked.connect(lambda: self.join_channel('Marketing'))
         layout.addWidget(blabla_button)
@@ -156,16 +150,21 @@ class ChatWindow(QWidget):
         send_button.clicked.connect(self.send_message)
         layout.addWidget(send_button)
 
+        self.message_input.returnPressed.connect(self.send_message)
+
         self.client = ChatClient('localhost', 12355, self.display_message, nickname)
-        self.channel = channel  # Ajoutez cette ligne pour stocker le canal actuel
+        self.channel = channel
 
     def display_message(self, message):
-        self.chat_history.append(message)
+        if message == "Vous n'avez pas le droit d'accéder à ce canal":
+            QMessageBox.warning(self, "Accès refusé", message)
+        else:
+            self.chat_history.append(message)
 
     def send_message(self):
         message = self.message_input.text()
         if message:
-            self.client.send(message, self.channel)  # Inclure le nom du canal
+            self.client.send(message, self.channel)
             self.message_input.clear()
 
 class RegisterWindow(QWidget):
@@ -193,7 +192,7 @@ class RegisterWindow(QWidget):
     def register_account(self):
         new_username = self.new_username_input.text()
         new_password = self.new_password_input.text()
-        if new_username and new_password:  # Assurez-vous que les champs ne sont pas vides
+        if new_username and new_password:
             create_user(new_username, new_password)
             QMessageBox.information(self, 'Inscription', 'Compte créé avec succès.')
             self.close()
@@ -229,6 +228,7 @@ class LoginWindow(QWidget):
         login_button.clicked.connect(self.check_credentials)
         layout.addWidget(login_button)
 
+        self.password_input.returnPressed.connect(self.check_credentials)
         self.setLayout(layout)
 
     def open_register_window(self):
@@ -244,14 +244,10 @@ class LoginWindow(QWidget):
         else:
             QMessageBox.warning(self, 'Erreur', 'Login et/ou mot de passe inconnu.')
 
-    def accept_login(self):
-        pass
-        # Ici, vous ouvrez la fenêtre de chat
-        # ...
 
 if __name__ == '__main__':
     app = QApplication([])
-    appliquer_feuille_de_style(app)  # Appliquer la feuille de style globale à l'application
+    appliquer_feuille_de_style(app)
     login_window = LoginWindow()
     login_window.show()
     app.exec()

@@ -5,6 +5,9 @@ from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushBut
 
 global server
 
+RESTRICTED_CHANNELS = ['Informatique', 'Marketing', 'Comptabilité']
+access_approved = {channel: [] for channel in RESTRICTED_CHANNELS}  # Liste des clients autorisés par canal
+
 class ServerWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -29,7 +32,7 @@ class ServerWindow(QWidget):
         QApplication.instance().quit()
 
 def start_server():
-    global server_running
+    global server_running, server
     server_running = True
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind(('localhost', 12355))
@@ -41,7 +44,7 @@ def start_server():
 
     def broadcast(message, channel):
         for client in clients:
-            if client_channels[client] == channel:
+            if channel not in RESTRICTED_CHANNELS or client in access_approved[channel]:
                 client.send(message)
 
     def handle_client(client):
@@ -50,17 +53,26 @@ def start_server():
                 message = client.recv(1024).decode('utf-8')
                 if message:
                     if message.startswith('['):
-                        # Extraire le canal et le message
                         channel, actual_message = message.split(']', 1)
-                        channel = channel[1:]  # Enlever '[' du début
-                        actual_message = actual_message.strip()  # Enlever les espaces supplémentaires
-                        client_channels[client] = channel  # Attribuer le canal au client
-                    else:
-                        # Utiliser le canal déjà attribué, s'il existe
-                        channel = client_channels.get(client)
-                        actual_message = message
+                        channel = channel[1:]
+                        client_channels[client] = channel
 
-                    if channel:
+                        if channel in RESTRICTED_CHANNELS:
+                            if client not in access_approved[channel]:
+                                print(f"Autorisez vous l'accès de {nicknames[clients.index(client)]} au canal {channel} ?")
+                                auth = input("Autoriser l'accès ? (oui/non): ").strip().lower()
+                                if auth == "oui":
+                                    access_approved[channel].append(client)
+                                    client.send(f"ACCESS_GRANTED:{channel}".encode('utf-8'))
+                                else:
+                                    client.send(f"ACCESS_DENIED:{channel}".encode('utf-8'))
+                                continue  # Ne pas diffuser le message si l'accès n'est pas encore autorisé
+                        actual_message = actual_message.strip()
+                    else:
+                        channel = client_channels.get(client)
+                        actual_message = message.strip()
+
+                    if channel and (channel not in RESTRICTED_CHANNELS or client in access_approved[channel]):
                         full_message = f"{nicknames[clients.index(client)]}: {actual_message}"
                         print(full_message)
                         broadcast(full_message.encode('utf-8'), channel)
